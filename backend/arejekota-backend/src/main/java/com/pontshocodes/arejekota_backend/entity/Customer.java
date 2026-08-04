@@ -20,6 +20,8 @@ public class Customer {
     private String passwordHash;
     @Column(name="created_at",nullable=false)
     private LocalDateTime createdAt;//Will later use by crypt password encoder
+    @Column(name="is_activate",nullable= false)
+    private boolean active=false;//account start inactive until OTP is verified
 
     public Customer(){}
 
@@ -29,6 +31,7 @@ public class Customer {
         this.email = email;
         this.passwordHash = passwordHash;
         this.createdAt = LocalDateTime.now();
+        this.active = false;
     }
     //Getters for our fields
     public Long getId(){
@@ -49,7 +52,7 @@ public class Customer {
     public LocalDateTime getCreatedAt(){
         return this.createdAt;
     }
-
+    public boolean isActive(){return this.active;}
 
     //Setters for our fields
     public void setId(Long Id){
@@ -70,5 +73,6 @@ public class Customer {
     public void setCreatedAt(LocalDateTime createdAt){
         this.createdAt = createdAt;
     }
-
+    public void setActive(boolean active){this.active = active;
+    }
 }
