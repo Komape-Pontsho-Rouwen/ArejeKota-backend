@@ -1,5 +1,6 @@
 package com.pontshocodes.arejekota_backend.entity;
 
+import com.pontshocodes.arejekota_backend.repository.CustomerRepository;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -76,3 +77,5 @@ public class Customer {
     public void setActive(boolean active){this.active = active;
     }
 }
+
+

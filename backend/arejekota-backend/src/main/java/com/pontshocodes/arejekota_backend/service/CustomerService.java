@@ -3,6 +3,7 @@ package com.pontshocodes.arejekota_backend.service;
 import com.pontshocodes.arejekota_backend.entity.Customer;
 import com.pontshocodes.arejekota_backend.exeption.EmailAlreadyExistsException;
 import com.pontshocodes.arejekota_backend.repository.CustomerRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -55,24 +56,29 @@ public class CustomerService {
         Customer customer = new Customer(firstName, lastName, email, hashedPassword);
         Customer savedCustomer = customerRepository.save(customer);
 
+        otpService.generateOTP(savedCustomer);
+
         return savedCustomer;
     }
-
+    @Transactional
     public void activateAccount(String email, String submittedCode) {
-        boolean isVerified = otpService.verifyOtp(email, submittedCode);
-        //Runs for only for the correct otp and then search for the email
-        if (isVerified) {
-            Optional<Customer> result = customerRepository.findByEmail(email);//Find the customer with this email
+        Optional<Customer> result = customerRepository.findByEmail(email);
             Customer customer;//declaring a variable that can refer to a customer object
             if (result.isPresent()) {
                 customer = result.get(); //Assigning customer object in result to the customer variable
             } else {
                 throw new IllegalArgumentException("No account exist for this email");
             }
-            customer.setActive(true);
-            customerRepository.save(customer);
+            if(customer.isActive()) {
+                throw new IllegalArgumentException("This account is already active");
+            }
+            boolean isVerified = otpService.verifyOtp(customer , submittedCode);
+            if(isVerified){
+                customer.setActive(true);
+                customerRepository.save(customer);
         }
     }
+
 
     public void resendOtp(String email) {
         Optional<Customer> result = customerRepository.findByEmail(email);
@@ -83,17 +89,17 @@ public class CustomerService {
             throw new IllegalArgumentException("An account with this  email is not found");
         }
         //Checking if the account is active
-        if (!customer.isActive()) {
+        if (customer.isActive()) {
             throw new IllegalArgumentException("This account is already active");
         }
-        otpService.generateOTP(email);
+        otpService.generateOTP(customer);
 
     }
 
     public void updateCustomer(String email, String newFirstName, String newLastName) {
         Optional<Customer> result = customerRepository.findByEmail(email);
         Customer customer;
-        if (result.isPresent()) {
+        if (result.isPresent()){
             customer = result.get();
         } else {
             throw new IllegalArgumentException("No account found for this email");
@@ -110,20 +116,28 @@ public class CustomerService {
     }
 
     public void deleteAccount(String email, String submittedOtp) {
-        boolean isVerified = otpService.verifyOtp(email, submittedOtp);
+        if(submittedOtp == null || submittedOtp.isBlank()){
+            throw new IllegalArgumentException("OTP can not be null");
+        }
+        Optional<Customer> results = customerRepository.findByEmail(email);
+        Customer customer;
+        if(results.isPresent()){
+            customer = results.get();
+        }
+        else{
+            throw new IllegalArgumentException("No account exists with this email");
+        }
+        if(!customer.isActive()){
+            throw new IllegalArgumentException("This account is not active");
+        }
+
+        boolean isVerified = otpService.verifyOtp(customer , submittedOtp);
         if (isVerified) {
-            Optional<Customer> result = customerRepository.findByEmail(email);
-            Customer customer;
-            if (result.isPresent()) {
-                customer = result.get();
-            } else {
-                throw new IllegalArgumentException("No account found for this email");
-            }
             customerRepository.delete(customer);
         }
     }
 
-    public void resetPassword(String email) {
+    public void requestPasswordReset(String email) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email can not be empty");
         }
@@ -142,7 +156,7 @@ public class CustomerService {
         if (!customer.isActive()) {
             throw new IllegalArgumentException("Please activate your account first");
         }
-        otpService.generateOTP(email);
+        otpService.generateOTP(customer);
 
     }
 
@@ -166,18 +180,20 @@ public class CustomerService {
         if (!newPassword.matches(passwordPattern)) {
             throw new IllegalArgumentException("Password must be 8 characters.");
         }
+        Optional<Customer> result = customerRepository.findByEmail(email);
+        Customer customer;
+        if(result.isPresent()){
+            customer = result.get();
+        }
+        else{
+            throw new IllegalArgumentException("No account found for this email");
+        }
+        if(!customer.isActive()){
+            throw new IllegalArgumentException("Please activate your account first");
+        }
 
-        boolean isVerified = otpService.verifyOtp(email, submittedOtp);
+        boolean isVerified = otpService.verifyOtp(customer,submittedOtp);
         if (isVerified) {
-            Optional<Customer> result = customerRepository.findByEmail(email); //Searching an account with this email
-            Customer customer;
-            if (result.isPresent()) {
-                customer = result.get();
-            } else {
-                throw new IllegalArgumentException("There is no account with this email");
-            }
-
-
             String newPasswordHash = passwordEncoder.encode(newPassword);
             customer.setPasswordHash(newPasswordHash);//replacing the old password
             customerRepository.save(customer);
