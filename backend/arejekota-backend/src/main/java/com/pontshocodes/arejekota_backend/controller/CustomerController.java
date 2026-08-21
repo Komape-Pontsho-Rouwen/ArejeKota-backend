@@ -79,4 +79,13 @@ public class CustomerController {
 
 
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+        String token = customerService.login(
+                request.getEmail(),
+                request.getPassword()
+        );
+        return ResponseEntity.ok(token);
+    }
 }

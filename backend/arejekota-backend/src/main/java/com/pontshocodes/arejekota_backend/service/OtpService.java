@@ -36,6 +36,7 @@ public class OtpService {
 
     }
 
+
     public boolean verifyOtp(Customer customer, String submittedCode) {
         if (submittedCode == null || submittedCode.isBlank()) {
             throw new IllegalArgumentException("OTP can not be null");

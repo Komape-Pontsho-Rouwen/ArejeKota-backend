@@ -14,13 +14,15 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
+    private final JwtService jwtService;
 
 
     //Constructor Injection
-    public CustomerService(CustomerRepository customerRepository, PasswordEncoder passwordEncoder, OtpService otpService) {
+    public CustomerService(CustomerRepository customerRepository, PasswordEncoder passwordEncoder, OtpService otpService ,JwtService jwtService) {
         this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
+        this.jwtService=jwtService;
 
     }
 
@@ -60,22 +62,23 @@ public class CustomerService {
 
         return savedCustomer;
     }
+
     @Transactional
     public void activateAccount(String email, String submittedCode) {
         Optional<Customer> result = customerRepository.findByEmail(email);
-            Customer customer;//declaring a variable that can refer to a customer object
-            if (result.isPresent()) {
-                customer = result.get(); //Assigning customer object in result to the customer variable
-            } else {
-                throw new IllegalArgumentException("No account exist for this email");
-            }
-            if(customer.isActive()) {
-                throw new IllegalArgumentException("This account is already active");
-            }
-            boolean isVerified = otpService.verifyOtp(customer , submittedCode);
-            if(isVerified){
-                customer.setActive(true);
-                customerRepository.save(customer);
+        Customer customer;//declaring a variable that can refer to a customer object
+        if (result.isPresent()) {
+            customer = result.get(); //Assigning customer object in result to the customer variable
+        } else {
+            throw new IllegalArgumentException("No account exist for this email");
+        }
+        if (customer.isActive()) {
+            throw new IllegalArgumentException("This account is already active");
+        }
+        boolean isVerified = otpService.verifyOtp(customer, submittedCode);
+        if (isVerified) {
+            customer.setActive(true);
+            customerRepository.save(customer);
         }
     }
 
@@ -99,7 +102,7 @@ public class CustomerService {
     public void updateCustomer(String email, String newFirstName, String newLastName) {
         Optional<Customer> result = customerRepository.findByEmail(email);
         Customer customer;
-        if (result.isPresent()){
+        if (result.isPresent()) {
             customer = result.get();
         } else {
             throw new IllegalArgumentException("No account found for this email");
@@ -116,22 +119,21 @@ public class CustomerService {
     }
 
     public void deleteAccount(String email, String submittedOtp) {
-        if(submittedOtp == null || submittedOtp.isBlank()){
+        if (submittedOtp == null || submittedOtp.isBlank()) {
             throw new IllegalArgumentException("OTP can not be null");
         }
         Optional<Customer> results = customerRepository.findByEmail(email);
         Customer customer;
-        if(results.isPresent()){
+        if (results.isPresent()) {
             customer = results.get();
-        }
-        else{
+        } else {
             throw new IllegalArgumentException("No account exists with this email");
         }
-        if(!customer.isActive()){
+        if (!customer.isActive()) {
             throw new IllegalArgumentException("This account is not active");
         }
 
-        boolean isVerified = otpService.verifyOtp(customer , submittedOtp);
+        boolean isVerified = otpService.verifyOtp(customer, submittedOtp);
         if (isVerified) {
             customerRepository.delete(customer);
         }
@@ -160,6 +162,7 @@ public class CustomerService {
 
     }
 
+    @Transactional
     public void confirmPasswordReset(String email, String submittedOtp, String newPassword) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email is required");
@@ -182,17 +185,16 @@ public class CustomerService {
         }
         Optional<Customer> result = customerRepository.findByEmail(email);
         Customer customer;
-        if(result.isPresent()){
+        if (result.isPresent()) {
             customer = result.get();
-        }
-        else{
+        } else {
             throw new IllegalArgumentException("No account found for this email");
         }
-        if(!customer.isActive()){
+        if (!customer.isActive()) {
             throw new IllegalArgumentException("Please activate your account first");
         }
 
-        boolean isVerified = otpService.verifyOtp(customer,submittedOtp);
+        boolean isVerified = otpService.verifyOtp(customer, submittedOtp);
         if (isVerified) {
             String newPasswordHash = passwordEncoder.encode(newPassword);
             customer.setPasswordHash(newPasswordHash);//replacing the old password
@@ -201,6 +203,29 @@ public class CustomerService {
         }
 
     }
+
+    public String login(String email, String password) {
+
+        Optional<Customer> result = customerRepository.findByEmail(email);
+        Customer customer;
+
+        if (result.isPresent()) {
+            customer = result.get();
+        } else {
+            throw new IllegalArgumentException("No account found for this email");
+        }
+
+        if (!customer.isActive()) {
+            throw new IllegalArgumentException("Please activate your account first");
+        }
+
+        if (!passwordEncoder.matches(password, customer.getPasswordHash())) {
+            throw new IllegalArgumentException("Incorrect password");
+        }
+
+        return jwtService.generateToken(customer.getEmail(), "CUSTOMER");
+    }
+
 
 }
 

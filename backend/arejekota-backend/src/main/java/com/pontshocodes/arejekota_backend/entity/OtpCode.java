@@ -15,6 +15,8 @@ public class OtpCode {
     private Long id;
 
 
+
+
     @OneToOne
     @JoinColumn(name="customer_id",nullable=false,unique=true)
     private Customer customer;
@@ -31,7 +33,7 @@ public class OtpCode {
     protected OtpCode() {
     }
 
-    public OtpCode(Customer customer, String code, LocalDateTime expiresAt) {
+    public OtpCode(Customer customer,String code, LocalDateTime expiresAt) {
         this.customer = customer;
         this.code = code;
         this.expiresAt = expiresAt;
@@ -43,7 +45,7 @@ public class OtpCode {
     public Customer getCustomer() { return customer; }
     public String getCode() { return code; }
     public LocalDateTime getExpiresAt() { return expiresAt; }
-    public int getAttempts(){return this.attempts = attempts;}
+    public int getAttempts(){return attempts;}
     public void setAttempts(int attempts){
         this.attempts = attempts;
     }
