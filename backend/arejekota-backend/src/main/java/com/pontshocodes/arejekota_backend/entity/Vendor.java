@@ -23,11 +23,11 @@ public class Vendor {
     @Column(name="passwordHash",nullable=false)
     private String passwordHash;
 
-    @Column(name="Active")
-    private boolean active = true;
+    @Column(name="active")
+    private boolean active;
 
     @Column(name="createdAt")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     public Vendor(){}
 
@@ -36,6 +36,8 @@ public class Vendor {
         this.address=address;
         this.email=email;
         this.passwordHash=passwordHash;
+        this.active = true;
+        this.createdAt = LocalDateTime.now();
 
     }
     public void setId(long id){
@@ -47,7 +49,6 @@ public class Vendor {
     public void setBusinessName(String businessName){
         this.businessName = businessName;
     }
-
     public String getBusinessName(){return businessName;}
 
     public void setAddress(String address){
