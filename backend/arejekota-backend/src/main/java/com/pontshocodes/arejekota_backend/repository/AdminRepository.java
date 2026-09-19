@@ -1,0 +1,18 @@
+package com.pontshocodes.arejekota_backend.repository;
+
+
+import com.pontshocodes.arejekota_backend.entity.Admin;
+import com.pontshocodes.arejekota_backend.entity.VendorStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface AdminRepository extends JpaRepository<Admin , Long> {
+
+    Optional<Admin> findByEmail(String email);
+    boolean existsByEmail(String email);
+
+
+}

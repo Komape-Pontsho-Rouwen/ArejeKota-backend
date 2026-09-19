@@ -67,10 +67,10 @@ public class EmployeeService {
         if(workEmail ==  null || workEmail.isEmpty()){
             throw new IllegalArgumentException("Work email can not be null");
         }
-        if(temporaryPassword==null || temporaryPassword.isEmpty()){
+        if(temporaryPassword==null || temporaryPassword.isBlank()){
             throw new IllegalArgumentException("Password can not be empty");
         }
-        if(employeeId ==null || employeeId.isEmpty()){
+        if(employeeId ==null || employeeId.isBlank()){
             throw new IllegalArgumentException(("Employee id can not be empty"));
         }
         Optional<Employee> results = employeeRepository.findByEmail(workEmail);
