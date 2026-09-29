@@ -19,7 +19,7 @@ public class AdminService {
     private final JwtService jwtService;
     private final VendorRepository vendorRepository;
 
-    public AdminService(AdminRepository adminRepository, PasswordEncoder passwordEncoder , JwtService jwtService,VendorRepository vendorRepository ,PasswordGenerator passwordGenerator){
+    public AdminService(AdminRepository adminRepository, PasswordEncoder passwordEncoder , JwtService jwtService,VendorRepository vendorRepository ){
         this.adminRepository=adminRepository;
         this.passwordEncoder=passwordEncoder;
         this.jwtService=jwtService;

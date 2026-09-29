@@ -37,7 +37,7 @@ public class Vendor {
     @Column(name="status",nullable=false)
     private VendorStatus status;
 
-    @Column(name="approved_at",nullable = false)
+    @Column(name="approved_at", nullable=true)
     private LocalDateTime approvedAt;
 
     @Column(name="password_change_required",nullable = false)
@@ -56,7 +56,7 @@ public class Vendor {
 
     public Vendor(){}
 
-    public Vendor(String firstName ,String lastName ,String email ,String  cellPhone,String businessName ,String address ){
+    public Vendor(String firstName ,String lastName ,String email ,String  cellPhone,String businessName ,String address  ){
         this.firstName=firstName;
         this.lastName=lastName;
         this.email=email;
@@ -65,7 +65,9 @@ public class Vendor {
         this.address=address;
         this.active=false;
         this.status = VendorStatus.PENDING;
-        this.passwordChangeRequired= false;
+        this.passwordChangeRequired=false;
+        this.submittedAt = LocalDateTime.now();
+
 
 
     }

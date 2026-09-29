@@ -17,17 +17,21 @@ public class VendorController {
     public VendorController(VendorService vendorService){
         this.vendorService = vendorService;
     }
+    
+    @PostMapping("/register")
     public ResponseEntity<String> register (@RequestBody VendorRegistrationRequest request){
         vendorService.register(
                 request.getFirstName(),
                 request.getLastName(),
                 request.getEmail(),
-                request.getPhoneNumnber(),
-                request.getBussinessName(),
+                request.getPhoneNumber(),
+                request.getBusinessName(),
                 request.getAddress()
         );
         return ResponseEntity.ok("Vendor registration request successful");
     }
+    
+    
 
 
 }

@@ -5,13 +5,14 @@ import com.pontshocodes.arejekota_backend.entity.Vendor;
 import com.pontshocodes.arejekota_backend.entity.VendorStatus;
 import com.pontshocodes.arejekota_backend.exeption.EmailAlreadyExistsException;
 import com.pontshocodes.arejekota_backend.repository.VendorRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class VendorService {
@@ -19,16 +20,17 @@ public class VendorService {
     private final VendorRepository vendorRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final PasswordGenerator passwordGenerator;
+
 
     private static final String EMAIL_DOMAIN ="@arejekota.co.za";
+    private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz23456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
 
-
-    public VendorService(VendorRepository vendorRepository ,PasswordEncoder passwordEncoder ,JwtService jwtService,PasswordGenerator passwordGenerator){
+    public VendorService(VendorRepository vendorRepository ,PasswordEncoder passwordEncoder ,JwtService jwtService){
         this.vendorRepository=vendorRepository;
         this.passwordEncoder= passwordEncoder;
         this.jwtService=jwtService;
-        this.passwordGenerator = passwordGenerator;
+
     }
 
     public Vendor register(String firstName,String lastName,String email,String cellPhone,String businessName ,String address){
@@ -79,7 +81,7 @@ public class VendorService {
 
         }
         String workEmail = generateVendorWorkEmail(vendor.getBusinessName());
-        String tempPassword = passwordGenerator.generateTemporaryPassword();
+        String tempPassword = generateTemporaryPassword();
 
         vendor.setWorkEmail(workEmail);
         vendor.setPasswordHash(passwordEncoder.encode(tempPassword));
@@ -104,6 +106,17 @@ public class VendorService {
         }while (vendorRepository.existsByWorkEmail(candidate));
         return candidate;
     }
+
+    private String generateTemporaryPassword() {
+        StringBuilder passwordBuilder = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            passwordBuilder.append(PASSWORD_CHARS.charAt(RANDOM.nextInt(PASSWORD_CHARS.length())));
+        }
+        return passwordBuilder.toString();
+
+    }
+    //Vendor Login
+
     public Vendor rejectVendor(Long vendorId){
         Optional<Vendor> result = vendorRepository.findById(vendorId);
         Vendor vendor;
@@ -123,11 +136,48 @@ public class VendorService {
     public List<Vendor> listPendingVendors(){
         return vendorRepository.findByStatus(VendorStatus.PENDING);
     }
-    public List<Vendor> lisRejectedVendors(){
-        return vendorRepository.findByStatus(VendorStatus.REJECTED);
+
+
+    public List<Vendor> listRejectedVendors(){return vendorRepository.findByStatus(VendorStatus.REJECTED);}
+
+    public String login(String workEmail , String password) {
+        if (workEmail == null || workEmail.isBlank()) {
+            throw new IllegalArgumentException("Email can not be empty");
+        }
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password can not be empty");
+        }
+        Vendor vendor = vendorRepository.findByWorkEmail(workEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
+        if (passwordEncoder.matches(password, vendor.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid Password");
+        }
+
+        return jwtService.generateToken(vendor.getWorkEmail() ,"VENDOR");
+    }
+    public String changePassword(String workEmail , String newPassword){
+        if (workEmail == null || workEmail.isBlank()) {
+            throw new IllegalArgumentException("Email can not be empty");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new IllegalArgumentException("Password can not be empty");
+        }
+        Vendor vendor = vendorRepository.findByWorkEmail(workEmail).orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
+
+
+        String password = passwordEncoder.encode(newPassword);
+        vendor.setPasswordHash(password);
+        vendor.setPasswordChangeRequired(false);
+
+        vendorRepository.save(vendor);
+
+        return "Password changed successfully";
+
     }
 
-
-
 }
+
+
+
+
 

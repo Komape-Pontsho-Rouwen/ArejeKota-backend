@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface VendorRepository extends JpaRepository<Vendor,Long> {
     Optional<Vendor> findByEmail(String email);
     boolean existsByEmail(String email);
+    Optional<Vendor> findByWorkEmail(String workEmail);
     boolean existsByWorkEmail(String email);
     List<Vendor> findByStatus(VendorStatus status);
 }

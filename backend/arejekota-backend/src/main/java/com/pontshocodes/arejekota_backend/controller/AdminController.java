@@ -14,7 +14,7 @@ import java.util.List;
 @RequestMapping("api/admin")
 public class AdminController {
 
-    private final  AdminService adminService;
+    private final AdminService adminService;
     private final VendorService vendorService;
 
     public AdminController(AdminService adminService , VendorService vendorService){
@@ -31,17 +31,21 @@ public class AdminController {
 
         return ResponseEntity.ok("Login Successful");
     }
-    @PostMapping("vendors/{id}/approve")
-    public  ResponseEntity<String> approveVendor (@PathVariable Long id){
+
+    // Put - Approving the existing vendor account that are pending
+
+    @PutMapping("/vendors/{id}/approve")
+    public ResponseEntity<String> approveVendor (@PathVariable Long id){
         vendorService.approveVendor(id);
         return ResponseEntity.ok("Vendor Approved Successfully");
+
     }
-    @PostMapping("/vendors/{id}/reject")
-    public ResponseEntity<String> rejectReject(@PathVariable Long id){
+    @PutMapping("/vendors/{id}/reject")
+    public ResponseEntity<String> rejectVendor(@PathVariable Long id){
         vendorService.rejectVendor(id);
         return ResponseEntity.ok("Vendor rejected");
     }
-
+    // Get - Retrieving pending vendor account
     @GetMapping("/vendors/pending")
     public ResponseEntity<List<Vendor>> listPendingVendors(){
         List<Vendor> pendingVendors = vendorService.listPendingVendors();
