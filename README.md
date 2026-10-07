@@ -15,9 +15,7 @@ and gives customers a way to order remotely — no travel, no queues.
 ## Features
 - Customer self registration with OTP email verification
 - JWT authentication — stay logged in across requests
-- Role based access: Customer, Vendor, Cashier, Driver
-- Account management: password reset, profile update, account deletion
-- Employee management : vendors register and manage their own staff
+- Role based access: Admin ,Customer & Vendor Account management: password reset, profile update, account deletion
 - Auto-generated work emails for staff accounts
 - Forced password change on first employee login
 
@@ -29,6 +27,5 @@ MySQL | JWT | BCrypt | JavaMailSender
 Controller | Service| Repository | DTOs |Custom exceptions
 
 ## Status
-In active development : customer flow complete and tested via Postman.
-Vendor and employee flows in progress.
+In active development : customer flow complete and tested via Postman.Admin amd vendor accounts in progress.
 
