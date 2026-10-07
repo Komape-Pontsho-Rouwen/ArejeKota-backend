@@ -20,49 +20,51 @@ public class VendorService {
     private final VendorRepository vendorRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final OtpService otpService;
 
 
-    private static final String EMAIL_DOMAIN ="@arejekota.co.za";
+    private static final String EMAIL_DOMAIN = "@arejekota.co.za";
     private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public VendorService(VendorRepository vendorRepository ,PasswordEncoder passwordEncoder ,JwtService jwtService){
-        this.vendorRepository=vendorRepository;
-        this.passwordEncoder= passwordEncoder;
-        this.jwtService=jwtService;
+    public VendorService(VendorRepository vendorRepository, PasswordEncoder passwordEncoder, JwtService jwtService, OtpService otpService) {
+        this.vendorRepository = vendorRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.otpService = otpService;
 
     }
 
-    public Vendor register(String firstName,String lastName,String email,String cellPhone,String businessName ,String address){
-        if(firstName==null || firstName.isBlank()){
+    public Vendor register(String firstName, String lastName, String email, String cellPhone, String businessName, String address) {
+        if (firstName == null || firstName.isBlank()) {
             throw new IllegalArgumentException("First name can not be empty");
 
         }
-        if(lastName==null || lastName.isBlank()){
+        if (lastName == null || lastName.isBlank()) {
             throw new IllegalArgumentException("Last name can not be empty");
 
         }
-        if(email==null || email.isBlank()){
+        if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email can not be empty");
         }
-        String emailPattern ="^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-        if(!email.matches(emailPattern)){
+        String emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        if (!email.matches(emailPattern)) {
             throw new IllegalArgumentException("Please enter a valid email");
         }
-        if(cellPhone==null || cellPhone.isBlank()){
+        if (cellPhone == null || cellPhone.isBlank()) {
             throw new IllegalArgumentException("Cellphone can not be empty");
 
         }
-        if(businessName==null || businessName.isBlank()){
+        if (businessName == null || businessName.isBlank()) {
             throw new IllegalArgumentException("Business name can not be empty");
         }
-        if(address==null || address.isBlank()){
+        if (address == null || address.isBlank()) {
             throw new IllegalArgumentException("Address can not be empty");
         }
-        if(vendorRepository.existsByEmail(email)){
+        if (vendorRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException("A vendor application already exists for this email");
         }
-        Vendor vendor = new Vendor(firstName,lastName,email,cellPhone,businessName,address);
+        Vendor vendor = new Vendor(firstName, lastName, email, cellPhone, businessName, address);
         vendorRepository.save(vendor);
 
         return vendor;
@@ -95,15 +97,15 @@ public class VendorService {
         return vendor;
     }
 
-    private String generateVendorWorkEmail(String businessName){
-        String base = businessName.trim().toLowerCase().replaceAll("[^a-z0-9]" , "");
+    private String generateVendorWorkEmail(String businessName) {
+        String base = businessName.trim().toLowerCase().replaceAll("[^a-z0-9]", "");
         int suffix = 1;
         String candidate;
-        do{
-            candidate = base + String.format("%02d",suffix) + EMAIL_DOMAIN;
-            suffix ++;
+        do {
+            candidate = base + String.format("%02d", suffix) + EMAIL_DOMAIN;
+            suffix++;
 
-        }while (vendorRepository.existsByWorkEmail(candidate));
+        } while (vendorRepository.existsByWorkEmail(candidate));
         return candidate;
     }
 
@@ -115,32 +117,33 @@ public class VendorService {
         return passwordBuilder.toString();
 
     }
-    //Vendor Login
 
-    public Vendor rejectVendor(Long vendorId){
+    public Vendor rejectVendor(Long vendorId) {
         Optional<Vendor> result = vendorRepository.findById(vendorId);
         Vendor vendor;
-        if(result.isPresent()){
+        if (result.isPresent()) {
             vendor = result.get();
-        }
-        else{
+        } else {
             throw new IllegalArgumentException("No vendor application found for this id");
         }
-        if(vendor.getStatus() != VendorStatus.PENDING){
+        if (vendor.getStatus() != VendorStatus.PENDING) {
             throw new IllegalArgumentException("Onl pending vendors can be rejected");
         }
         vendor.setStatus(VendorStatus.REJECTED);
         vendorRepository.save(vendor);
         return vendor;
     }
-    public List<Vendor> listPendingVendors(){
+
+    public List<Vendor> listPendingVendors() {
         return vendorRepository.findByStatus(VendorStatus.PENDING);
     }
 
 
-    public List<Vendor> listRejectedVendors(){return vendorRepository.findByStatus(VendorStatus.REJECTED);}
+    public List<Vendor> listRejectedVendors() {
+        return vendorRepository.findByStatus(VendorStatus.REJECTED);
+    }
 
-    public String login(String workEmail , String password) {
+    public String login(String workEmail, String password) {
         if (workEmail == null || workEmail.isBlank()) {
             throw new IllegalArgumentException("Email can not be empty");
         }
@@ -149,18 +152,21 @@ public class VendorService {
         }
         Vendor vendor = vendorRepository.findByWorkEmail(workEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
-        if (passwordEncoder.matches(password, vendor.getPasswordHash())) {
+        if (!passwordEncoder.matches(password, vendor.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid Password");
         }
 
-        return jwtService.generateToken(vendor.getWorkEmail() ,"VENDOR");
+        return jwtService.generateToken(vendor.getWorkEmail(), "VENDOR");
     }
-    public String changePassword(String workEmail , String newPassword){
+
+    //Change password after logging in using temporary password
+
+    public String changePassword(String workEmail, String newPassword) {
         if (workEmail == null || workEmail.isBlank()) {
-            throw new IllegalArgumentException("Email can not be empty");
+            throw new IllegalArgumentException("Email can not be empty.");
         }
         if (newPassword == null || newPassword.isBlank()) {
-            throw new IllegalArgumentException("Password can not be empty");
+            throw new IllegalArgumentException("Password can not be empty.");
         }
         Vendor vendor = vendorRepository.findByWorkEmail(workEmail).orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
 
@@ -171,11 +177,81 @@ public class VendorService {
 
         vendorRepository.save(vendor);
 
-        return "Password changed successfully";
+        return "Password changed successfully.";
 
     }
 
+    //Update - Reset password
+
+    public void resetPassword (String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email can not be empty.");
+        }
+        String emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        if (!email.matches(emailPattern)) {
+            throw new IllegalArgumentException("Please enter a valid email address.");
+        }
+
+        Optional<Vendor> result = vendorRepository.findByEmail(email);
+        Vendor vendor;
+        if (result.isPresent()) {
+            vendor = result.get();
+        } else {
+            throw new IllegalArgumentException("No vendor account found for this email.");
+        }
+
+        if (!vendor.isActive()) {
+            throw new IllegalArgumentException("Please activate your account first");
+        }
+        otpService.generateOTP(email);
+
+
+    }
+
+
+    public String confirmPasswordReset(String email, String submittedOtp, String newPassword) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        String emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        if (!email.matches(emailPattern)) {
+            throw new IllegalArgumentException("Please enter a valid email address.");
+        }
+        if (submittedOtp == null || submittedOtp.isBlank()) {
+            throw new IllegalArgumentException("OTP can not be empty");
+        }
+
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new IllegalArgumentException("Password is required.");
+        }
+
+        String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,}$";
+        if (!newPassword.matches(passwordPattern)) {
+            throw new IllegalArgumentException("Password must be 8 characters.");
+        }
+
+        Optional<Vendor> result = vendorRepository.findByEmail(email);
+        Vendor vendor;
+        if (result.isPresent()) {
+            vendor = result.get();
+        } else {
+            throw new IllegalArgumentException("No vendor account found for this email.");
+        }
+        otpService.verifyOtp(email, submittedOtp);
+        String newPasswordHash = passwordEncoder.encode(newPassword);
+        vendor.setPasswordHash(newPasswordHash);
+        vendor.setPasswordChangeRequired(false);
+        vendorRepository.save(vendor);
+
+        return "Password reset successfully.Please login using your new password";
+
+    }
+
+
 }
+
+
+
 
 
 

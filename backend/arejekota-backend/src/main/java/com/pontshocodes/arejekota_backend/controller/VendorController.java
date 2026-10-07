@@ -28,10 +28,44 @@ public class VendorController {
                 request.getBusinessName(),
                 request.getAddress()
         );
-        return ResponseEntity.ok("Vendor registration request successful");
+        return ResponseEntity.ok("Registration successful.Please wait for admin approval.");
     }
-    
-    
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequest request){
+        String token = vendorService.login(
+                request.getWorkEmail(),
+                request.getPassword()
+
+        );
+        return ResponseEntity.ok(token);
+    }
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest request){
+        String result = vendorService.login(
+                request.getWorkEmail(),
+                request.getNewPassowrd()
+        );
+        return ResponseEntity(result);
+
+    }
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody PasswordRequestRequest request){
+        vendorService.resetPassword(
+                request.getEmail()
+        );
+        return ResponseEntity.ok("OTP sent.Please check your email.");
+    }
+
+    @PostMapping("/confirm-password-reset")
+    public ReponseEntity<String> confirmPasswordReset (@RequestBody ConfirmPasswordResetRequest request){
+        String result = vendorService.confirmPasswordReset(
+                request.getEmail(),
+                request.getSubmittedCode(),
+                request.getNewPassword()
+        );
+        return ResponseEntity.ok(result);
+    }
+
 
 
 }

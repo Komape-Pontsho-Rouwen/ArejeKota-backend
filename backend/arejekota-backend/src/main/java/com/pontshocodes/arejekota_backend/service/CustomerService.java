@@ -11,6 +11,7 @@ import java.util.Optional;
 
 @Service
 public class CustomerService {
+
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
@@ -18,11 +19,11 @@ public class CustomerService {
 
 
     //Constructor Injection
-    public CustomerService(CustomerRepository customerRepository, PasswordEncoder passwordEncoder, OtpService otpService ,JwtService jwtService) {
+    public CustomerService(CustomerRepository customerRepository, PasswordEncoder passwordEncoder, OtpService otpService, JwtService jwtService) {
         this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
-        this.jwtService=jwtService;
+        this.jwtService = jwtService;
 
     }
 
@@ -58,7 +59,7 @@ public class CustomerService {
         Customer customer = new Customer(firstName, lastName, email, hashedPassword);
         Customer savedCustomer = customerRepository.save(customer);
 
-        otpService.generateOTP(savedCustomer);
+        otpService.generateOTP(savedCustomer.getEmail());
 
         return savedCustomer;
     }
@@ -75,7 +76,7 @@ public class CustomerService {
         if (customer.isActive()) {
             throw new IllegalArgumentException("This account is already active");
         }
-        boolean isVerified = otpService.verifyOtp(customer, submittedCode);
+        boolean isVerified = otpService.verifyOtp(email, submittedCode);
         if (isVerified) {
             customer.setActive(true);
             customerRepository.save(customer);
@@ -95,7 +96,7 @@ public class CustomerService {
         if (customer.isActive()) {
             throw new IllegalArgumentException("This account is already active");
         }
-        otpService.generateOTP(customer);
+        otpService.generateOTP(email);
 
     }
 
@@ -133,7 +134,7 @@ public class CustomerService {
             throw new IllegalArgumentException("This account is not active");
         }
 
-        boolean isVerified = otpService.verifyOtp(customer, submittedOtp);
+        boolean isVerified = otpService.verifyOtp(email, submittedOtp);
         if (isVerified) {
             customerRepository.delete(customer);
         }
@@ -158,12 +159,12 @@ public class CustomerService {
         if (!customer.isActive()) {
             throw new IllegalArgumentException("Please activate your account first");
         }
-        otpService.generateOTP(customer);
+        otpService.generateOTP(email);
 
     }
 
     @Transactional
-    public void confirmPasswordReset(String email, String submittedOtp, String newPassword) {
+    public String confirmPasswordReset(String email, String submittedOtp, String newPassword) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
@@ -188,21 +189,20 @@ public class CustomerService {
         if (result.isPresent()) {
             customer = result.get();
         } else {
-            throw new IllegalArgumentException("No account found for this email");
+            throw new IllegalArgumentException("No account found for this email.");
         }
         if (!customer.isActive()) {
-            throw new IllegalArgumentException("Please activate your account first");
+            throw new IllegalArgumentException("Please activate your account first.");
         }
 
-        boolean isVerified = otpService.verifyOtp(customer, submittedOtp);
-        if (isVerified) {
-            String newPasswordHash = passwordEncoder.encode(newPassword);
-            customer.setPasswordHash(newPasswordHash);//replacing the old password
-            customerRepository.save(customer);
+        otpService.verifyOtp(email, submittedOtp);
+        String newPasswordHash = passwordEncoder.encode(newPassword);
+        customer.setPasswordHash(newPasswordHash);
+        customerRepository.save(customer);
 
-        }
-
+        return "Password reset successful.Please login with your new password.";
     }
+
 
     public String login(String email, String password) {
 
@@ -228,6 +228,8 @@ public class CustomerService {
 
 
 }
+
+
 
 
 
