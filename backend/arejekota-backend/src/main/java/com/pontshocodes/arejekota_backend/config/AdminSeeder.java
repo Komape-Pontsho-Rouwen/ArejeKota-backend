@@ -27,7 +27,7 @@ public class AdminSeeder implements CommandLineRunner {
         if(adminRepository.count() == 0){
             Admin admin = new Admin(
                     env.getProperty("admin.seed.email"),
-                    passwordEncoder.encode(env.getProperty("admin.seed.passwordHash"))
+                    passwordEncoder.encode(env.getProperty("admin.seed.password"))
             );
 
             adminRepository.save(admin);

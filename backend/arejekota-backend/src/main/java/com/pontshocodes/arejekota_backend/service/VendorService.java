@@ -1,6 +1,9 @@
 package com.pontshocodes.arejekota_backend.service;
 
 
+import com.pontshocodes.arejekota_backend.dto.PendingVendorResponse;
+import com.pontshocodes.arejekota_backend.dto.VendorApprovalResponse;
+import com.pontshocodes.arejekota_backend.dto.VendorLoginResponse;
 import com.pontshocodes.arejekota_backend.entity.Vendor;
 import com.pontshocodes.arejekota_backend.entity.VendorStatus;
 import com.pontshocodes.arejekota_backend.exeption.EmailAlreadyExistsException;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -27,7 +31,7 @@ public class VendorService {
     private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public VendorService(VendorRepository vendorRepository, PasswordEncoder passwordEncoder, JwtService jwtService, OtpService otpService) {
+    public VendorService (VendorRepository vendorRepository, PasswordEncoder passwordEncoder, JwtService jwtService, OtpService otpService) {
         this.vendorRepository = vendorRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -70,7 +74,7 @@ public class VendorService {
         return vendor;
     }
 
-    public Vendor approveVendor(Long vendorId) {
+    public VendorApprovalResponse approveVendor(Long vendorId) {
         Optional<Vendor> result = vendorRepository.findById(vendorId);
         Vendor vendor;
         if (result.isPresent()) {
@@ -92,9 +96,10 @@ public class VendorService {
         vendor.setPasswordChangeRequired(true);
         vendor.setApprovedAt(LocalDateTime.now());
 
-
         vendorRepository.save(vendor);
-        return vendor;
+        VendorApprovalResponse response = new VendorApprovalResponse(vendor.getId(), workEmail, tempPassword);
+
+        return response;
     }
 
     private String generateVendorWorkEmail(String businessName) {
@@ -117,6 +122,21 @@ public class VendorService {
         return passwordBuilder.toString();
 
     }
+    public List<PendingVendorResponse> listPendingVendors() {
+        List<Vendor> pendingVendors = vendorRepository.findByStatus(VendorStatus.PENDING);
+        List<PendingVendorResponse> responses = new ArrayList<>();
+        for (Vendor vendor : pendingVendors) {
+            responses.add(new PendingVendorResponse(
+                    vendor.getId(),
+                    vendor.getFirstName(),
+                    vendor.getLastName(),
+                    vendor.getEmail(),
+                    vendor.getCellPhone(),
+                    vendor.getBusinessName(),
+                    vendor.getAddress()));
+        }
+        return responses;
+    }
 
     public Vendor rejectVendor(Long vendorId) {
         Optional<Vendor> result = vendorRepository.findById(vendorId);
@@ -127,23 +147,20 @@ public class VendorService {
             throw new IllegalArgumentException("No vendor application found for this id");
         }
         if (vendor.getStatus() != VendorStatus.PENDING) {
-            throw new IllegalArgumentException("Onl pending vendors can be rejected");
+            throw new IllegalArgumentException("Only pending vendors can be rejected");
         }
         vendor.setStatus(VendorStatus.REJECTED);
         vendorRepository.save(vendor);
         return vendor;
     }
 
-    public List<Vendor> listPendingVendors() {
-        return vendorRepository.findByStatus(VendorStatus.PENDING);
-    }
 
 
     public List<Vendor> listRejectedVendors() {
         return vendorRepository.findByStatus(VendorStatus.REJECTED);
     }
 
-    public String login(String workEmail, String password) {
+    public VendorLoginResponse login(String workEmail, String password) {
         if (workEmail == null || workEmail.isBlank()) {
             throw new IllegalArgumentException("Email can not be empty");
         }
@@ -156,20 +173,31 @@ public class VendorService {
             throw new IllegalArgumentException("Invalid Password");
         }
 
-        return jwtService.generateToken(vendor.getWorkEmail(), "VENDOR");
+        String token = jwtService.generateToken(vendor.getWorkEmail(), "VENDOR");
+        return new VendorLoginResponse(token ,vendor.isPasswordChangeRequired());
     }
 
     //Change password after logging in using temporary password
 
-    public String changePassword(String workEmail, String newPassword) {
+    public String changePassword(String workEmail,String currentPassword, String newPassword) {
         if (workEmail == null || workEmail.isBlank()) {
             throw new IllegalArgumentException("Email can not be empty.");
+        }
+        if(currentPassword ==null || currentPassword.isBlank()){
+            throw new IllegalArgumentException("Current password can not be empty");
         }
         if (newPassword == null || newPassword.isBlank()) {
             throw new IllegalArgumentException("Password can not be empty.");
         }
-        Vendor vendor = vendorRepository.findByWorkEmail(workEmail).orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
 
+        Vendor vendor = vendorRepository.findByWorkEmail(workEmail).orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
+        if(!passwordEncoder.matches(currentPassword ,vendor.getPasswordHash())){
+            throw new IllegalArgumentException("Current Password is incorrect");
+        }
+        String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,}$";
+        if(!passwordPattern.matches(passwordPattern)){
+            throw new IllegalArgumentException("Please enter a strong password");
+        }
 
         String password = passwordEncoder.encode(newPassword);
         vendor.setPasswordHash(password);

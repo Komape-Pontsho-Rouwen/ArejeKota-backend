@@ -12,7 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class CustomerServiceTest {
 
 
-    // @Mock private final CustomerRepository customerRepository;
+    //@Mock private final CustomerRepository customerRepository;
    // @Mock private final PasswordEncoder passwordEncoder;
    // @Mock private final JwtService jwtService;
     //@Mock private final OtpService otpService;
