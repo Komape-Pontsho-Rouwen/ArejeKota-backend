@@ -21,7 +21,7 @@ public class SecurityBeanConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                        .anyRequest().permitAll() // useful while still building needs changing will be replaced with roles 
                 );
         return http.build();
     }

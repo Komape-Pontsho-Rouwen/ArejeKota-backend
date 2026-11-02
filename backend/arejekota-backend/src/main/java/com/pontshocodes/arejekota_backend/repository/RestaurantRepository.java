@@ -14,4 +14,8 @@ public interface RestaurantRepository extends JpaRepository<Restaurant,Long> {
     //Searching a restaurant table associated with the specified vendor id
     Optional<Restaurant> findByVendor(Long vendorId);
     boolean existsByVendor(Vendor vendor);
+
+    Optional<Restaurant> findByWorkEmail(String workEmail);
+
+    Optional<Restaurant>findByVendor(Vendor vendor);
 }
