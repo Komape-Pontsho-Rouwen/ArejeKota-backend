@@ -8,7 +8,6 @@ public class MenuItemRequest {
     private String name;
     private String description;
     private BigDecimal price;
-    private String imageUrl;
     private String category;
 
     public MenuItemRequest() {}
@@ -22,8 +21,6 @@ public class MenuItemRequest {
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
