@@ -1,6 +1,5 @@
 package com.pontshocodes.arejekota_backend.entity;
 
-import com.pontshocodes.arejekota_backend.repository.CustomerRepository;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -22,9 +21,9 @@ public class Customer {
     @Column(name="password_hash",nullable=false)
     private String passwordHash;
     @Column(name="created_at",nullable=false)
-    private LocalDateTime createdAt;//Will later use by crypt password encoder
+    private LocalDateTime createdAt;
     @Column(name="is_activate",nullable= false)
-    private boolean active=false;//account start inactive until OTP is verified
+    private boolean active;
 
     public Customer(){}
 
