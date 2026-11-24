@@ -25,9 +25,6 @@ public class MenuItem {
 
     @Column(nullable=false ,length=50)
     private String category;
-    
-    @Column(name = "image_url")
-    private String imageUrl;
 
     @Column(nullable = false)
     private boolean available = true;
@@ -41,12 +38,11 @@ public class MenuItem {
 
     public MenuItem() {}
 
-    public MenuItem(String name, String description, BigDecimal price,String category, String imageUrl, Restaurant restaurant) {
+    public MenuItem(String name, String description, BigDecimal price, String category, Restaurant restaurant) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.category = category;
-        this.imageUrl = imageUrl;
         this.restaurant = restaurant;
         this.available = true;
         this.createdAt = LocalDateTime.now();
@@ -65,9 +61,6 @@ public class MenuItem {
 
     public void setCategory(String category){ this.category=category;}
     public String getCategory(){return category;}
-    
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-    public String getImageUrl() { return imageUrl; }
 
     public void setAvailable(boolean available) { this.available = available; }
     public boolean isAvailable() { return available; }
